@@ -1,8 +1,8 @@
 import { generateKeyBetween } from 'fractional-indexing'
 
 /**
- * Ordering uses fractional-index strings so a drag only rewrites the row that
- * moved — no renumbering pass over its siblings (PLAN.md §4).
+ * Ordering uses fractional-index strings ("a0", "a0V", …) so a drag only
+ * rewrites the row that moved, with no renumbering pass over its siblings.
  */
 export function orderBetween(prev?: string | null, next?: string | null): string {
   return generateKeyBetween(prev ?? null, next ?? null)

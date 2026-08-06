@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils'
 
 /**
  * Searchable picker over every open card on every board. Linking is optional —
- * an untasked focus session is a first-class thing (PLAN.md §4).
+ * an untasked focus session is a first-class thing.
  */
 export function TaskPicker({
   taskId,

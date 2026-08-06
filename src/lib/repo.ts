@@ -47,7 +47,7 @@ export async function updateBoard(id: string, patch: Partial<Board>): Promise<vo
 
 /**
  * Deletes the board, its columns and its tasks. Sessions survive — they carry a
- * snapshot of the task title so history stays truthful (PLAN.md §4).
+ * snapshot of the task title so history stays truthful.
  */
 export async function deleteBoard(id: string): Promise<void> {
   await db.transaction('rw', db.boards, db.columns, db.tasks, async () => {

@@ -5,7 +5,7 @@ import { uid } from './utils'
 
 /**
  * Everything the user owns lives here and nowhere else. There is no sync, no
- * remote mirror, and no telemetry — see PLAN.md §1.
+ * remote mirror, and no telemetry.
  *
  * Booleans (`archived`, `completed`) are deliberately un-indexed: IndexedDB
  * cannot use them as keys, and the collections are small enough to filter in

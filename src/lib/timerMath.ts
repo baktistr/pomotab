@@ -6,7 +6,7 @@ export type TimerStatus = 'idle' | 'running' | 'paused'
  * The part of the timer that is shared across tabs and survives a reload.
  * Everything else (remaining seconds, progress) is *derived* from these
  * timestamps, which is what makes the countdown immune to background-tab
- * throttling — see PLAN.md §5.
+ * throttling.
  */
 export interface TimerSnapshot {
   phase: PhaseType

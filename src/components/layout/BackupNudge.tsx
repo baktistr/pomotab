@@ -22,7 +22,7 @@ function snoozedUntil(): number {
 
 /**
  * IndexedDB is device-local and the browser may evict it. A gentle reminder
- * beats a support thread about vanished history (PLAN.md §7).
+ * beats a support thread about vanished history.
  */
 export function BackupNudge() {
   const settings = useSettingsStore((s) => s.settings)

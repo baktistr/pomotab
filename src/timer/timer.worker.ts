@@ -3,7 +3,7 @@
  *
  * Browsers clamp `setInterval` in hidden tabs to roughly once a minute, but
  * workers are throttled far less aggressively. Nothing here decides *when* a
- * phase ends — the main thread derives that from timestamps (PLAN.md §5). This
+ * phase ends — the main thread derives that from timestamps. This
  * worker only says "look again now".
  */
 
