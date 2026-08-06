@@ -13,5 +13,8 @@ FROM nginx:1.27-alpine-slim
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE 80
+# Probes `localhost` rather than 127.0.0.1 on purpose: that is the name external
+# orchestrators use, and it resolves to ::1 as well, so this check fails loudly
+# here if the server ever stops listening on both address families.
 HEALTHCHECK --interval=30s --timeout=3s \
-  CMD wget -qO /dev/null http://127.0.0.1/ || exit 1
+  CMD wget -qO /dev/null http://localhost/ || exit 1
