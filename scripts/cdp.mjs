@@ -101,6 +101,17 @@ export async function openPage(url) {
       })()`)
       if (!ok) throw new Error(`no button labelled ${label}`)
     },
+    /** Sends trusted mouse input, including the movement needed by drag sensors. */
+    async mouse(type, x, y, buttons = type === 'mouseReleased' ? 0 : 1) {
+      await send('Input.dispatchMouseEvent', {
+        type,
+        x,
+        y,
+        button: type === 'mouseMoved' ? 'none' : 'left',
+        buttons,
+        clickCount: type === 'mouseMoved' ? 0 : 1,
+      })
+    },
     /** Sends real files to a hidden <input type="file">, change event included. */
     async setFileInput(selector, files) {
       const doc = await send('DOM.getDocument', { depth: -1 })

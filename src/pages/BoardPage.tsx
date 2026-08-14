@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import {
@@ -7,8 +7,10 @@ import {
   KeyboardSensor,
   PointerSensor,
   closestCorners,
+  pointerWithin,
   useSensor,
   useSensors,
+  type CollisionDetection,
   type DragEndEvent,
   type DragOverEvent,
   type DragStartEvent,
@@ -118,6 +120,60 @@ export function BoardPage() {
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   )
 
+  /**
+   * Cards and columns are overlapping sortable targets. Give each drag type a
+   * collision strategy matching the axis and target it can actually use.
+   */
+  const collisionDetection = useCallback<CollisionDetection>((args) => {
+    const isColumn = args.active.data.current?.type === 'column'
+
+    if (!isColumn) {
+      // A column and each card inside it are overlapping droppables. Following
+      // the pointer makes crossing into another column work immediately, even
+      // over its header or the empty space above/below its cards. Prefer the
+      // more specific card when the pointer is directly over one.
+      const pointerHits = pointerWithin(args)
+      const cardHits = pointerHits.filter(
+        (collision) => collision.data?.droppableContainer.data.current?.type === 'task',
+      )
+      if (cardHits.length > 0) return cardHits
+
+      const columnHits = pointerHits.filter(
+        (collision) => collision.data?.droppableContainer.data.current?.type === 'column',
+      )
+      if (columnHits.length > 0) return columnHits
+
+      // Keyboard dragging has no pointer coordinates, and a fast pointer can
+      // briefly fall between measured rectangles.
+      return closestCorners(args)
+    }
+
+    // Columns only move on the horizontal axis. `closestCenter` also scores
+    // their Y centers, so columns with different card counts are difficult to
+    // reorder from the top handle. Compare X only and use the pointer position
+    // when available so the header remains as responsive as the bottom rows.
+    const pointerX = args.pointerCoordinates?.x
+    const activeX =
+      pointerX ?? args.collisionRect.left + args.collisionRect.width / 2
+
+    return args.droppableContainers
+      .filter(
+        (container) =>
+          container.data.current?.type === 'column' && container.rect.current,
+      )
+      .map((container) => {
+        const rect = container.rect.current!
+        return {
+          id: container.id,
+          data: {
+            droppableContainer: container,
+            value: Math.abs(activeX - (rect.left + rect.width / 2)),
+          },
+        }
+      })
+      .sort((a, b) => a.data.value - b.data.value)
+  }, [])
+
   function handleDragStart(event: DragStartEvent) {
     const type = event.active.data.current?.type
     setDragSnapshot({
@@ -188,7 +244,6 @@ export function BoardPage() {
 
     const activeId = String(active.id)
     const targetColumn = columnOf(snapshot, activeId)
-    const originColumn = columnOf(live, activeId)
     if (!targetColumn) {
       setDragSnapshot(null)
       return
@@ -196,9 +251,12 @@ export function BoardPage() {
 
     const list = snapshot.tasksByColumn[targetColumn]
     let index = list.findIndex((t) => t.id === activeId)
-    if (targetColumn === originColumn && over.data.current?.type === 'task' && over.id !== active.id) {
-      // Same column: dnd-kit's array-move semantics put the card exactly where
-      // the hovered card currently sits.
+    if (over.data.current?.type === 'task' && over.id !== active.id) {
+      // dnd-kit's array-move semantics put the card exactly where the card it
+      // is hovering currently sits. This has to run for a cross-column drop
+      // too: the snapshot only records the slot the card entered the column on,
+      // so without it a card dragged on and then up to the top would preview at
+      // the top and save itself back into the row it crossed the border at.
       const overIndex = list.findIndex((t) => t.id === over.id)
       if (overIndex !== -1) index = overIndex
     }
@@ -335,7 +393,7 @@ export function BoardPage() {
 
       <DndContext
         sensors={sensors}
-        collisionDetection={closestCorners}
+        collisionDetection={collisionDetection}
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
